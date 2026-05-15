@@ -110,7 +110,7 @@ def notes_list(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def note_detail(request, note_id):
     note = get_accessible_note(note_id, request.user)
@@ -125,8 +125,9 @@ def note_detail(request, note_id):
     if note.owner != request.user:
         return Response({"message": "Only the note owner can perform this action."}, status=status.HTTP_403_FORBIDDEN)
 
-    if request.method == "PUT":
-        serializer = NoteSerializer(note, data=request.data, partial=False)
+    if request.method in ("PUT", "PATCH"):
+        partial = request.method == "PATCH"
+        serializer = NoteSerializer(note, data=request.data, partial=partial)
         if serializer.is_valid():
             updated = serializer.save()
             log_activity(updated, request.user, "updated")
